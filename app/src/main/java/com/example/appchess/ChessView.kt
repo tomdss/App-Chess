@@ -8,15 +8,23 @@ import android.graphics.Color
 import android.graphics.Paint
 import android.graphics.RectF
 import android.util.AttributeSet
+import android.util.Log
 import android.view.View
+import kotlin.math.min
 
 class ChessView(context: Context?, attrs: AttributeSet?) : View(context, attrs) {
-    private val originX = 20f
-    private val originY = 200f
-    private val cellSide = 130f
+
+    private val TAG = "ChessView1"
+
+    private var originX = 20f
+    private var originY = 200f
+    private var cellSide = 150f
     private val paint = Paint()
     private val darkColor = Color.rgb(105, 101, 85)
     private val lightColor = Color.rgb(190, 195, 165)
+    private val scaleFactor = 0.9f
+
+    var chessDelegate: ChessDelegate? = null
 
     private val imgResIds = setOf(
         R.drawable.queen_black,
@@ -39,18 +47,22 @@ class ChessView(context: Context?, attrs: AttributeSet?) : View(context, attrs) 
     }
 
     override fun onDraw(canvas: Canvas) {
-        drawBoard(canvas)
+        Log.d(TAG, "onDraw canvas w = ${canvas.width}, h = ${canvas.height}")
+        val chessSideMin = min(canvas.width, canvas.height) * scaleFactor
+        cellSide = chessSideMin / 8
+        originX = (canvas.width - chessSideMin) / 2
+        originY = (canvas.height - 8 * cellSide) / 2
+        drawChessBoard(canvas)
         drawPieces(canvas)
     }
 
     private fun drawPieces(canvas: Canvas) {
-        val chessModel = ChessModel()
-        chessModel.reset()
+//        val chessModel = ChessModel()
+//        chessModel.reset()
         for (col in 0..7) {
             for (row in 0..7) {
-                val piece = chessModel.pieceAt(col, row)
-                if (piece != null) {
-                    drawPieceAt(canvas, col, row, piece.resId)
+                chessDelegate?.pieceAtInterface(col, row)?.let {
+                    drawPieceAt(canvas, col, row, it.resId)
                 }
             }
         }
@@ -77,19 +89,23 @@ class ChessView(context: Context?, attrs: AttributeSet?) : View(context, attrs) 
         }
     }
 
-    private fun drawBoard(canvas: Canvas) {
-        for (j in 0..7) {
-            for (i in 0..7) {
-                paint.color = if ((i + j) % 2 == 1) darkColor else lightColor
-                canvas.drawRect(
-                    originX + cellSide * i,
-                    originY + cellSide * j,
-                    originX + cellSide * (i + 1),
-                    originY + cellSide * (j + 1),
-                    paint
-                )
+    private fun drawChessBoard(canvas: Canvas) {
+        for (col in 0..7) {
+            for (row in 0..7) {
+                drawSquareAt(canvas, col, row, (row + col) % 2 == 1)
             }
         }
+    }
+
+    private fun drawSquareAt(canvas: Canvas, col: Int, row: Int, isDark: Boolean) {
+        paint.color = if (isDark) darkColor else lightColor
+        canvas.drawRect(
+            originX + cellSide * row,
+            originY + cellSide * col,
+            originX + cellSide * (row + 1),
+            originY + cellSide * (col + 1),
+            paint
+        )
     }
 
 

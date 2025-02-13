@@ -8,7 +8,7 @@ class ChessModel {
         reset()
     }
 
-    fun reset() {
+    private fun reset() {
         piecesBox.removeAll(piecesBox)
         for (i in 0..1) {
             piecesBox.add(ChessPiece(0 + 7 * i, 0, ChessPlayer.WHITE, ChessRank.ROOK, R.drawable.rook_white))
