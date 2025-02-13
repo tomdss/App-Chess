@@ -1,11 +1,21 @@
 package com.example.appchess
 
+import android.util.Log
+
 class ChessModel {
+
+    private val TAG = "ChessModel1"
 
     var piecesBox = mutableSetOf<ChessPiece>()
 
     init {
         reset()
+        Log.d(TAG, "${piecesBox.size}")
+        movePiece(0,0, 1,7)
+        Log.d(TAG, "${piecesBox.size}")
+        movePiece(1,7, 3,3)
+        Log.d(TAG, "${piecesBox.size}")
+        Log.d(TAG, toString())
     }
 
     private fun reset() {
@@ -30,6 +40,14 @@ class ChessModel {
         piecesBox.add(ChessPiece(3, 7, ChessPlayer.BLACK, ChessRank.QUEEN, R.drawable.queen_black))
         piecesBox.add(ChessPiece(4, 0, ChessPlayer.WHITE, ChessRank.KING, R.drawable.king_white))
         piecesBox.add(ChessPiece(4, 7, ChessPlayer.BLACK, ChessRank.KING, R.drawable.king_black))
+    }
+
+    fun movePiece(colFrom: Int, rowFrom: Int, colTo: Int, rowTo: Int){
+        val p = pieceAt(colFrom, rowFrom) ?: return
+        val p1 = pieceAt(colTo, rowTo)
+        p1?.let { piecesBox.remove(it) }
+        p.col = colTo
+        p.row = rowTo
     }
 
     fun pieceAt(col: Int, row: Int): ChessPiece? {
