@@ -18,7 +18,7 @@ class ChessModel {
         Log.d(TAG, toString())
     }
 
-    private fun reset() {
+    fun reset() {
         piecesBox.removeAll(piecesBox)
         for (i in 0..1) {
             piecesBox.add(

@@ -33,6 +33,8 @@ class ChessView(context: Context?, attrs: AttributeSet?) : View(context, attrs) 
 
     var chessDelegate: ChessDelegate? = null
 
+    var movingPieceBitmap: Bitmap? = null
+
     private val imgResIds = setOf(
         R.drawable.queen_black,
         R.drawable.queen_white,
@@ -53,6 +55,13 @@ class ChessView(context: Context?, attrs: AttributeSet?) : View(context, attrs) 
         loadBitmaps()
     }
 
+    override fun onMeasure(widthMeasureSpec: Int, heightMeasureSpec: Int) {
+        super.onMeasure(widthMeasureSpec, heightMeasureSpec)
+        Log.d(TAG, "onMeasure w = $width, h = $height")
+        val minMeasure = min(widthMeasureSpec, heightMeasureSpec)
+        setMeasuredDimension(minMeasure, minMeasure)
+    }
+
     override fun onDraw(canvas: Canvas) {
         Log.d(TAG, "onDraw canvas w = $width, h = $height")
         val chessSideMin = min(width, height) * scaleFactor
@@ -71,6 +80,9 @@ class ChessView(context: Context?, attrs: AttributeSet?) : View(context, attrs) 
                 fromCol = ((event.x - originX) / cellSide).toInt()
                 fromRow = 7 - ((event.y - originY) / cellSide).toInt()
                 Log.d(TAG, "onTouchEvents ACTION_DOWN $fromCol, $fromRow")
+                chessDelegate?.pieceAtInterface(fromCol, fromRow)?.let {
+                    movingPieceBitmap = bitmaps[it.resId]
+                }
             }
 
             MotionEvent.ACTION_MOVE -> {
@@ -85,6 +97,7 @@ class ChessView(context: Context?, attrs: AttributeSet?) : View(context, attrs) 
                 val row = 7 -((event.y - originY) / cellSide).toInt()
                 Log.d(TAG, "onTouchEvents ACTION_UP $col, $row")
                 chessDelegate?.movePiece(fromCol, fromRow, col, row)
+                movingPieceBitmap = null
             }
         }
         return true
@@ -100,10 +113,9 @@ class ChessView(context: Context?, attrs: AttributeSet?) : View(context, attrs) 
                 }
             }
         }
-        chessDelegate?.pieceAtInterface(fromCol, fromRow)?.let {
-            val bitmap = bitmaps[it.resId] ?: return
+        movingPieceBitmap?.let {
             canvas.drawBitmap(
-                bitmap,
+                it,
                 null,
                 RectF(
                     fromMovingCol - cellSide/2,
@@ -114,6 +126,21 @@ class ChessView(context: Context?, attrs: AttributeSet?) : View(context, attrs) 
                 null
             )
         }
+
+//        chessDelegate?.pieceAtInterface(fromCol, fromRow)?.let {
+//            val bitmap = bitmaps[it.resId] ?: return
+//            canvas.drawBitmap(
+//                bitmap,
+//                null,
+//                RectF(
+//                    fromMovingCol - cellSide/2,
+//                    fromMovingRow - cellSide/2,
+//                    fromMovingCol + cellSide/2,
+//                    fromMovingRow + cellSide/2
+//                ),
+//                null
+//            )
+//        }
     }
 
     private fun drawPieceAt(canvas: Canvas, col: Int, row: Int, drawableResId: Int) {
