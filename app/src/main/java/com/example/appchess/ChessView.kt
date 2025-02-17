@@ -9,6 +9,7 @@ import android.graphics.Paint
 import android.graphics.RectF
 import android.util.AttributeSet
 import android.util.Log
+import android.view.MotionEvent
 import android.view.View
 import kotlin.math.min
 
@@ -20,9 +21,15 @@ class ChessView(context: Context?, attrs: AttributeSet?) : View(context, attrs) 
     private var originY = 200f
     private var cellSide = 150f
     private val paint = Paint()
-    private val darkColor = Color.rgb(105, 101, 85)
-    private val lightColor = Color.rgb(190, 195, 165)
+    private val darkColor = Color.parseColor("#EEEEEE")
+    private val lightColor = Color.parseColor("#BBBBBB")
     private val scaleFactor = 0.9f
+
+    private var fromCol = -1
+    private var fromRow = -1
+
+    private var fromMovingCol = -1f
+    private var fromMovingRow = -1f
 
     var chessDelegate: ChessDelegate? = null
 
@@ -47,13 +54,40 @@ class ChessView(context: Context?, attrs: AttributeSet?) : View(context, attrs) 
     }
 
     override fun onDraw(canvas: Canvas) {
-        Log.d(TAG, "onDraw canvas w = ${canvas.width}, h = ${canvas.height}")
-        val chessSideMin = min(canvas.width, canvas.height) * scaleFactor
+        Log.d(TAG, "onDraw canvas w = $width, h = $height")
+        val chessSideMin = min(width, height) * scaleFactor
         cellSide = chessSideMin / 8
-        originX = (canvas.width - chessSideMin) / 2
-        originY = (canvas.height - 8 * cellSide) / 2
+        originX = (width - chessSideMin) / 2
+        originY = (height - 8 * cellSide) / 2
         drawChessBoard(canvas)
         drawPieces(canvas)
+    }
+
+
+    override fun onTouchEvent(event: MotionEvent?): Boolean {
+        if(event == null) return false
+        when (event.action) {
+            MotionEvent.ACTION_DOWN -> {
+                fromCol = ((event.x - originX) / cellSide).toInt()
+                fromRow = 7 - ((event.y - originY) / cellSide).toInt()
+                Log.d(TAG, "onTouchEvents ACTION_DOWN $fromCol, $fromRow")
+            }
+
+            MotionEvent.ACTION_MOVE -> {
+                Log.d(TAG, "onTouchEvent ACTION_MOVE ${event.x}, ${event.y}")
+                fromMovingCol = event.x
+                fromMovingRow = event.y
+                invalidate()
+            }
+
+            MotionEvent.ACTION_UP -> {
+                val col = ((event.x - originX) / cellSide).toInt()
+                val row = 7 -((event.y - originY) / cellSide).toInt()
+                Log.d(TAG, "onTouchEvents ACTION_UP $col, $row")
+                chessDelegate?.movePiece(fromCol, fromRow, col, row)
+            }
+        }
+        return true
     }
 
     private fun drawPieces(canvas: Canvas) {
@@ -65,6 +99,20 @@ class ChessView(context: Context?, attrs: AttributeSet?) : View(context, attrs) 
                     drawPieceAt(canvas, col, row, it.resId)
                 }
             }
+        }
+        chessDelegate?.pieceAtInterface(fromCol, fromRow)?.let {
+            val bitmap = bitmaps[it.resId] ?: return
+            canvas.drawBitmap(
+                bitmap,
+                null,
+                RectF(
+                    fromMovingCol - cellSide/2,
+                    fromMovingRow - cellSide/2,
+                    fromMovingCol + cellSide/2,
+                    fromMovingRow + cellSide/2
+                ),
+                null
+            )
         }
     }
 
